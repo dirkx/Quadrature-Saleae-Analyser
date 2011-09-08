@@ -1,0 +1,15 @@
+Simple Quadrature decoder for the Saleae Logic probe. Tested against version 1.1.9.
+
+This has only be lightly tested against a few mice. Let me know if it works (or
+not). dirkx(at)webweaving(dot)org. Thanks!
+
+See below for more information:
+	http://www.fpga4fun.com/QuadratureDecoder.html
+	http://www.datatranslation.com/docs/whitepapers/quadrature_encoder.pdf
+	http://www.mindspring.com/~tom2000/Delphi/Codewheel.html
+
+Version 0.01 / 20011-09-05
+	first release
+
+$Id: README 1032 2011-09-08 21:44:11Z dirkx $
+
