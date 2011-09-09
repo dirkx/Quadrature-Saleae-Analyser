@@ -8,8 +8,29 @@ See below for more information:
 	http://www.datatranslation.com/docs/whitepapers/quadrature_encoder.pdf
 	http://www.mindspring.com/~tom2000/Delphi/Codewheel.html
 
-Version 0.01 / 20011-09-05
+Building
+--------
+
+Move these files into the 'source' directory of the SDK; i.e. they should
+be located in SaleaeAnalyzerSdk-1.1.9/source for the unpacked 1.1.9 SDK
+in place of any existing files. Typical process is
+
+	unzip  SaleaeAnalyzerSdk-X.Y.zip
+	cd SaleaeAnalyzerSdk-X.Y
+	mv source source.examples
+	git clone git://github.com/dirkx/Quadrature-Saleae-Analyser.git source
+	python build_analyzer.py 
+
+And then add the release/debug path to your Logic.app as per the SDK instructions.
+
+History
+-------
+
+Version 1.00 / 20011-09-05
 	first release
 
-$Id: README 1032 2011-09-08 21:44:11Z dirkx $
+Version 1.01 / 20011-09-09
+	updated build details, licenses.
+
+$Id: README 1033 2011-09-09 08:04:49Z dirkx $
 

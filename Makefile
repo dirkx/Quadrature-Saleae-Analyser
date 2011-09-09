@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #  
-#  $Id: Makefile 1032 2011-09-08 21:44:11Z dirkx $
+#  $Id: Makefile 1025 2011-09-06 22:49:11Z dirkx $
 #
 all:
 	(cd ..; python build_analyzer.py )
