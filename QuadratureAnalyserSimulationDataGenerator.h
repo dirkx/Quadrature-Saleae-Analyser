@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  * 
- * $Id: QuadratureAnalyserSimulationDataGenerator.h 1033 2011-09-09 08:04:49Z dirkx $
+ * $Id: QuadratureAnalyserSimulationDataGenerator.h 1037 2011-09-12 09:49:58Z dirkx $
  */
 
 #ifndef QUADRATUREANALYSER_SIMULATION_DATA_GENERATOR
@@ -50,7 +50,7 @@ protected:
 	U32 mSimulationSampleRateHz;
 
 	// state for ticks - as they span generation blocks.
-	U32 ticks;
+	U32 ticks, runtime, speed;
 	int dir;
 	U64 at;
 };

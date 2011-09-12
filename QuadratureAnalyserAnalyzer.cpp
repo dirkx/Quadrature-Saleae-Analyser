@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  * 
- * $Id: QuadratureAnalyserAnalyzer.cpp 1033 2011-09-09 08:04:49Z dirkx $
+ * $Id: QuadratureAnalyserAnalyzer.cpp 1037 2011-09-12 09:49:58Z dirkx $
  */
 #include "QuadratureAnalyserAnalyzer.h"
 #include "QuadratureAnalyserAnalyzerSettings.h"
@@ -83,18 +83,41 @@ void QuadratureAnalyserAnalyzer::WorkerThread()
 
 	U32 glitchCount = 0;
 	U32 tickCount = 0;
+	int64_t posCount = 0;
 
 	for( ; ; )
 	{
 		AnalyzerResults::MarkerType m;
 		int result = 0;
-		// XX fixme - advance to next transition on _either_.
-		//
+		U64 a,b,c;
+#if 0
 		mChannelA->Advance(1);
 		mChannelB->Advance(1);
 
 		U8 mNewA = mChannelA->GetBitState() == BIT_HIGH ? 1 : 0;
 		U8 mNewB = mChannelB->GetBitState() == BIT_HIGH ? 1 : 0;
+#else
+		a =  mChannelA->GetSampleNumber();
+		b =  mChannelB->GetSampleNumber();
+		if (a<=b) {
+			mChannelA->AdvanceToNextEdge();
+		};
+		if (b<=a) {
+			mChannelB->AdvanceToNextEdge();
+		};
+		a =  mChannelA->GetSampleNumber();
+		b =  mChannelB->GetSampleNumber();
+		U8 mNewA = mLastA;
+		U8 mNewB = mLastB;
+		if (a<=b) {
+			mNewA = mChannelA->GetBitState() == BIT_HIGH ? 1 : 0;
+			c = a;
+		};
+		if (b<=a) {
+			mNewB = mChannelB->GetBitState() == BIT_HIGH ? 1 : 0;
+			c = b;
+		};
+#endif
 
 		change_t dir = qe_decode(mLastA, mLastB, mNewA, mNewB);
 		mLastA = mNewA;
@@ -106,12 +129,14 @@ void QuadratureAnalyserAnalyzer::WorkerThread()
 		case 	CLOCKWISE:
 		case 	COUNTERCW:
 			m = (dir == CLOCKWISE) ? AnalyzerResults::DownArrow : AnalyzerResults::UpArrow;
-			mResults->AddMarker( mChannelA->GetSampleNumber(), m, mSettings->mInputChannelA );
-			mResults->AddMarker( mChannelB->GetSampleNumber(), m, mSettings->mInputChannelB );
+			mResults->AddMarker( c, m, mSettings->mInputChannelA );
+			mResults->AddMarker( c, m, mSettings->mInputChannelB );
 			result ++;
 			tickCount++;
+			posCount += (m == CLOCKWISE) ?  -1 : 1;
+
 			lastEnd = curEnd;
-			curEnd = mChannelA->GetSampleNumber(); // fixme - should be A or B if they are not at same pace
+			curEnd = c;
 			break;
 		default:
 			glitchCount++;
@@ -123,7 +148,7 @@ void QuadratureAnalyserAnalyzer::WorkerThread()
 			if (glitchCount != 0 || lastDir != GLITCH) {
 				Frame frame;
 	
-				frame.mData1 = lastDir;
+				frame.mData1 = (posCount << 32) | lastDir;
 				frame.mData2 = ((U64)tickCount << 32) | (glitchCount << 0);
 				frame.mFlags = 0;
 	
@@ -141,7 +166,7 @@ void QuadratureAnalyserAnalyzer::WorkerThread()
 
 		if (result) {
 			mResults->CommitResults();
-			ReportProgress( mChannelA->GetSampleNumber() );
+			ReportProgress(c);
 		};
 
 	}
@@ -155,7 +180,8 @@ bool QuadratureAnalyserAnalyzer::NeedsRerun()
 U32 QuadratureAnalyserAnalyzer::GenerateSimulationData( U64 minimum_sample_index, U32 device_sample_rate, SimulationChannelDescriptor** simulation_channels )
 {
 	mSimulationDataGenerator.Initialize( GetSimulationSampleRate(), mSettings.get() );
-	return mSimulationDataGenerator.GenerateSimulationData( minimum_sample_index, device_sample_rate, simulation_channels );
+	return mSimulationDataGenerator.GenerateSimulationData( minimum_sample_index, 
+		device_sample_rate, simulation_channels );
 }
 
 U32 QuadratureAnalyserAnalyzer::GetMinimumSampleRateHz()
@@ -170,7 +196,8 @@ const char* QuadratureAnalyserAnalyzer::GetAnalyzerName() const
 
 const char* GetAnalyzerName()
 {
-	return "Quadrature Decoder";
+	// return MYVERSION;
+	return  "Quadrature Decoder";
 }
 
 Analyzer* CreateAnalyzer()

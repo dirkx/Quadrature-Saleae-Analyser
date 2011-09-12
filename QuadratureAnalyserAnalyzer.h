@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  * 
- * $Id: QuadratureAnalyserAnalyzer.h 1033 2011-09-09 08:04:49Z dirkx $
+ * $Id: QuadratureAnalyserAnalyzer.h 1037 2011-09-12 09:49:58Z dirkx $
  */
 
 #ifndef QUADRATUREANALYSER_ANALYZER_H
@@ -23,7 +23,7 @@
 #include "QuadratureAnalyserAnalyzerResults.h"
 #include "QuadratureAnalyserSimulationDataGenerator.h"
 
-#define MYVERSION "QuadratureAnalyser/1.01"
+#define MYVERSION "QuadratureAnalyser/1.02"
 
 #define SCANRATE (100)
 typedef enum change_t { STANDSTILL = 0, CLOCKWISE, COUNTERCW, GLITCH };

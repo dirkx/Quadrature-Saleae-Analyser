@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  * 
- * $Id: QuadratureAnalyserAnalyzerResults.cpp 1033 2011-09-09 08:04:49Z dirkx $
+ * $Id: QuadratureAnalyserAnalyzerResults.cpp 1037 2011-09-12 09:49:58Z dirkx $
 */
 #include "QuadratureAnalyserAnalyzerResults.h"
 #include <AnalyzerHelpers.h>
@@ -33,32 +33,94 @@ QuadratureAnalyserAnalyzerResults::~QuadratureAnalyserAnalyzerResults()
 {
 }
 
+float nunit(char * buff, float f) {
+	buff[0] = '\0';
+	     if (f < 1e-12) { f *= 1e12; strcpy(buff,"pico"); }
+	else if (f < 1e-09) { f *= 1e09; strcpy(buff,"nano"); }
+	else if (f < 1e-06) { f *= 1e06; strcpy(buff,"micro"); }
+	else if (f < 1e-03) { f *= 1e03; strcpy(buff,"mili"); }
+	else if (f > 1e+12) { f /= 1e12; strcpy(buff,"Giga"); }
+	else if (f > 1e+06) { f /= 1e06; strcpy(buff,"Mega"); }
+	else if (f > 1e+03) { f /= 1e03; strcpy(buff,"Kilo"); }
+	return f;
+}
+		
 void QuadratureAnalyserAnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& channel, DisplayBase display_base )
 {
-	char number_str[128];
-	ClearResultStrings();
+        U32 sample_rate = mAnalyzer->GetSampleRate();
 	Frame frame = GetFrame( frame_index );
+	char tpsUnit[12];
+	char rpsUnit[12];
+	char dUnit[12];
+	char buff[128];
+	char str[512];
 
 	change_t dir = (change_t) (frame.mData1 & 0xF);
+	int64_t posCnt =   (frame.mData1 >> 32) & 0xFFFFFFFF;
 	U32 gltchCnt = (frame.mData2 >>  0) & 0xFFFFFFFF;
 	U32 tocksCnt = (frame.mData2 >> 32) & 0xFFFFFFFF;
+
+	float rotPerSecond;
+	float ticksPerSecond;
+
+	U64 delta;
+	float dtime, rotation, dutime;
+
+	bzero(tpsUnit,sizeof(tpsUnit));
+	bzero(rpsUnit,sizeof(rpsUnit));
+	bzero(buff,sizeof(buff));
+	bzero(str,sizeof(str));
+
+	ClearResultStrings();
 
         switch(dir) {
         case    CLOCKWISE:
         case    COUNTERCW:
-			snprintf(number_str, sizeof(number_str), "%c",
+			snprintf(str, sizeof(str), "%c",
 				(dir == CLOCKWISE) ? '+' : '-');
-			AddResultString(number_str);
+			AddResultString(str);
 
-			snprintf(number_str, sizeof(number_str), "%c%d",
+			snprintf(str, sizeof(str), "%c%d",
 				(dir == CLOCKWISE) ? '+' : '-', tocksCnt);
-			AddResultString(number_str);
+			AddResultString(str);
 
-			snprintf(number_str, sizeof(number_str), "%c%d %s",
+			snprintf(str, sizeof(str), "%c%d %s",
 				(dir == CLOCKWISE) ? '+' : '-', 
 				tocksCnt, 
 				(dir == CLOCKWISE) ? "(clockwise)" : "(counterclockwise)");
-			AddResultString(number_str);
+			AddResultString(str);
+
+			delta = frame.mEndingSampleInclusive - frame.mStartingSampleInclusive;
+			dtime = (float) delta / sample_rate;
+			dutime = nunit(dUnit, dtime);
+
+			snprintf(buff, sizeof(buff), " for %f %sSeconds", dutime, dUnit);
+			strncat(str, buff,sizeof(str)-1);
+			AddResultString(str);
+
+			if (mSettings->ticksPerRotation != 0) {
+			rotation = posCnt / mSettings->ticksPerRotation;
+
+			snprintf(buff, sizeof(buff), " to position %f", rotation);
+			strncat(str, buff,sizeof(str)-1);
+			AddResultString(str);
+			};
+
+			ticksPerSecond = tocksCnt / dtime;
+			ticksPerSecond = nunit(tpsUnit, ticksPerSecond);
+
+			snprintf(buff, sizeof(buff), ", speed %f ticks/%sSecond", ticksPerSecond, tpsUnit);
+			strncat(str, buff,sizeof(str)-1);
+			AddResultString(str);
+
+			if (mSettings->ticksPerRotation != 0) {
+			rotPerSecond = tocksCnt / dtime / mSettings->ticksPerRotation;
+			rotPerSecond = nunit(rpsUnit, rotPerSecond);
+
+			snprintf(buff, sizeof(buff), " or speed %f degrees/%sSecond", rotPerSecond, rpsUnit);
+			strncat(str, buff,sizeof(str)-1);
+			AddResultString(str);
+			};
                         break;
         case    STANDSTILL:
                         break;
@@ -67,56 +129,56 @@ void QuadratureAnalyserAnalyzerResults::GenerateBubbleText( U64 frame_index, Cha
 
 			AddResultString( "err" );
 
-			snprintf(number_str, sizeof(number_str), "%d glitches", gltchCnt);
-			AddResultString(number_str);
+			snprintf(str, sizeof(str), "%d glitches", gltchCnt);
+			AddResultString(str);
                         break;
 	};
 }
 
 void QuadratureAnalyserAnalyzerResults::GenerateExportFile( const char* file, DisplayBase display_base, U32 export_type_user_id )
 {
-#if 0
 	std::ofstream file_stream( file, std::ios::out );
 
-	U64 trigger_sample = mAnalyzer->GetTriggerSample();
 	U32 sample_rate = mAnalyzer->GetSampleRate();
 
-	file_stream << "Time [s],Value" << std::endl;
+	file_stream << "Time [s],till[s], dir,pos,err,count" << std::endl;
 
 	U64 num_frames = GetNumFrames();
-	for( U32 i=0; i < num_frames; i++ )
+	for(U64 i=0; i < num_frames; i++ )
 	{
 		Frame frame = GetFrame( i );
-		
-		char time_str[128];
-		AnalyzerHelpers::GetTimeString( frame.mStartingSampleInclusive, trigger_sample, sample_rate, time_str, 128 );
 
-		char number_str[128];
-		AnalyzerHelpers::GetNumberString( frame.mData1, display_base, 8, number_str, 128 );
+                char from[128];
+                AnalyzerHelpers::GetTimeString( frame.mStartingSampleInclusive, 0, sample_rate, from, 128 );
 
-		file_stream << time_str << "," << number_str << std::endl;
+                char till[128];
+                AnalyzerHelpers::GetTimeString( frame.mEndingSampleInclusive, 0, sample_rate, till, 128 );
 
-		if( UpdateExportProgressAndCheckForCancel( i, num_frames ) == true )
-		{
-			file_stream.close();
-			return;
-		}
+		file_stream << from << "," << till;
+
+		change_t dir = (change_t) (frame.mData1 & 0xF);
+		int64_t posCnt = (frame.mData1 >> 32) & 0xFFFFFFFF;
+		U32 gltchCnt = (frame.mData2 >>  0) & 0xFFFFFFFF;
+		U32 tocksCnt = (frame.mData2 >> 32) & 0xFFFFFFFF;
+
+		switch(dir) {
+		case CLOCKWISE:  file_stream << ", +1,";
+			break;
+		case COUNTERCW:  file_stream << ", -1,";
+			break;
+		case STANDSTILL: file_stream << ",  0,";
+			break;
+		default:	file_stream << ", err,";
+			break;
+		};	
+		file_stream << posCnt << "," << gltchCnt << "," << tocksCnt << std::endl;
 	}
 
 	file_stream.close();
-#endif
 }
 
 void QuadratureAnalyserAnalyzerResults::GenerateFrameTabularText( U64 frame_index, DisplayBase display_base )
 {
-#if 0
-	Frame frame = GetFrame( frame_index );
-	ClearResultStrings();
-
-	char number_str[128];
-	AnalyzerHelpers::GetNumberString( frame.mData1, display_base, 8, number_str, 128 );
-	AddResultString( number_str );
-#endif
 }
 
 void QuadratureAnalyserAnalyzerResults::GeneratePacketTabularText( U64 packet_id, DisplayBase display_base )

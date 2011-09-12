@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  * 
- * $Id: QuadratureAnalyserAnalyzerSettings.cpp 1033 2011-09-09 08:04:49Z dirkx $
+ * $Id: QuadratureAnalyserAnalyzerSettings.cpp 1037 2011-09-12 09:49:58Z dirkx $
  */
 
 #include "QuadratureAnalyserAnalyzerSettings.h"
@@ -35,7 +35,7 @@ QuadratureAnalyserAnalyzerSettings::QuadratureAnalyserAnalyzerSettings()
 
 	mTicksPerRotationInterface.reset( new AnalyzerSettingInterfaceInteger() );
 	mTicksPerRotationInterface->SetTitleAndTooltip( "Impules/rotation",  
-		"Specify the number of rotations per full revolution - or set to '0' to ignore");
+		"Specify the number of changes per full revolution (or some other measure). Set to '0' to ignore - and not do speed/change calculations.");
 	mTicksPerRotationInterface->SetMax( 1e12 );
 	mTicksPerRotationInterface->SetMin( 0 );
 	mTicksPerRotationInterface->SetInteger( ticksPerRotation);

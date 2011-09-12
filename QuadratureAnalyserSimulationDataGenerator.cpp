@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  * 
- * $Id: QuadratureAnalyserSimulationDataGenerator.cpp 1033 2011-09-09 08:04:49Z dirkx $
+ * $Id: QuadratureAnalyserSimulationDataGenerator.cpp 1037 2011-09-12 09:49:58Z dirkx $
  */
 
 #include "QuadratureAnalyserSimulationDataGenerator.h"
@@ -28,6 +28,8 @@ QuadratureAnalyserSimulationDataGenerator::QuadratureAnalyserSimulationDataGener
 	initialized = false;
 	mChannelA = NULL;
 	mChannelB = NULL;
+	ticks = 10; dir = 0; at = 0;
+	runtime  = 0; speed = 1;
 }
 
 QuadratureAnalyserSimulationDataGenerator::~QuadratureAnalyserSimulationDataGenerator()
@@ -38,31 +40,29 @@ void QuadratureAnalyserSimulationDataGenerator::Initialize( U32 simulation_sampl
 {
 	mSimulationSampleRateHz = simulation_sample_rate;
 	mSettings = settings;
-	int first_run = 0;
 
-	if (!initialized) {
-		initialized = true;
-		if (mSettings->mInputChannelA != UNDEFINED_CHANNEL) {
-			if (mChannelA == NULL)
-				mChannelA = mQuadratureSimulationChannels.Add( mSettings->mInputChannelA, simulation_sample_rate, BIT_LOW );
-				first_run++;
-		} else {
-			mChannelA = NULL;
-		}
-	
-		if (mSettings->mInputChannelB != UNDEFINED_CHANNEL) {
-			if (mChannelB == NULL) 
-				mChannelB = mQuadratureSimulationChannels.Add( mSettings->mInputChannelB, simulation_sample_rate, BIT_LOW );
-				first_run++;
-	
-		} else {
-			mChannelB = NULL;
-		}
+	if (initialized)
+		return;
+	initialized = true;
 
-		mClockGenerator.Init(SCANRATE /* 10 to 5k */, simulation_sample_rate );
 
-		ticks = 10; dir = 0; at = 0;
-	};
+	if (mSettings->mInputChannelA != UNDEFINED_CHANNEL) {
+		if (mChannelA == NULL)
+			mChannelA = mQuadratureSimulationChannels.Add( mSettings->mInputChannelA, simulation_sample_rate, BIT_LOW );
+	} else {
+		mChannelA = NULL;
+	}
+
+	if (mSettings->mInputChannelB != UNDEFINED_CHANNEL) {
+		if (mChannelB == NULL) 
+			mChannelB = mQuadratureSimulationChannels.Add( mSettings->mInputChannelB, simulation_sample_rate, BIT_LOW );
+
+	} else {
+		mChannelB = NULL;
+	}
+
+	mClockGenerator.Init(SCANRATE /* 10 to 5k */, simulation_sample_rate );
+	srand(-time(NULL) ^ getpid());
 }
 
 U32 QuadratureAnalyserSimulationDataGenerator::GenerateSimulationData( U64 largest_sample_requested, U32 sample_rate, SimulationChannelDescriptor** simulation_channel )
@@ -79,18 +79,19 @@ U32 QuadratureAnalyserSimulationDataGenerator::GenerateSimulationData( U64 large
 	at = _mmax(mChannelA,mChannelB);
 #endif
 
-#if 0
 	#define DIRSTR(x) (x ? ((x==1) ? "in clockwise direction" : "in counter clockwise direction") : "standing still")
+#if 0
 	fprintf(stderr,"Starting at %lld, run till %lld  - %ld ticks from previous run %s left over\n", 
 		at, adjusted_largest_sample_requested, ticks, DIRSTR(dir));
 #endif
         while( at < adjusted_largest_sample_requested )
         {
 		if (ticks <= 0) {
-			U32 speed = 5+(rand() % 11);		// 5 .. 15 tocks	
-			U32 time = 500 + (rand() %  4500); 	// 0.5 to 5 seconds.
+			speed = 5+(rand() % 11);		// 5 .. 15 tocks/second
+			runtime  = 500 + (rand() %  4500); 	// 0.5 to 5 seconds.
 			dir = rand() % 3;			// in random (or non moving) direction.
-			ticks = 2 * speed * time / 1000;
+			ticks = 2 * speed * runtime  / 1000;
+	// fprintf(stderr,"speed %d, length %d, ticks %d, %s\n", speed, runtime , ticks, DIRSTR(dir));
 		};
 
 		switch(dir) {
@@ -111,9 +112,10 @@ U32 QuadratureAnalyserSimulationDataGenerator::GenerateSimulationData( U64 large
 		default:
 			fprintf(stderr,"Eh - nothing\n");
 		};
-
-		mQuadratureSimulationChannels.AdvanceAll(mClockGenerator.AdvanceByHalfPeriod(1));
-		at += mClockGenerator.AdvanceByHalfPeriod(1);
+		
+		U32 dtime = mClockGenerator.AdvanceByHalfPeriod(1) / (speed+1) * SCANRATE / 10;
+		mQuadratureSimulationChannels.AdvanceAll(dtime);
+		at += dtime;
 
 		if (ticks) ticks --;
 #if 0

@@ -32,5 +32,8 @@ Version 1.00 / 20011-09-05
 Version 1.01 / 20011-09-09
 	updated build details, licenses.
 
-$Id: README 1033 2011-09-09 08:04:49Z dirkx $
+Version 1.02 / 2011-09-10
+	added speed measurements and reporting out.
+
+$Id: README 1037 2011-09-12 09:49:58Z dirkx $
 
