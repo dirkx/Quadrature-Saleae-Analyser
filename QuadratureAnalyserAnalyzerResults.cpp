@@ -21,6 +21,8 @@
 #include "QuadratureAnalyserAnalyzerSettings.h"
 #include <iostream>
 #include <fstream>
+#include <iterator>
+#include <algorithm>
 
 QuadratureAnalyserAnalyzerResults::QuadratureAnalyserAnalyzerResults( QuadratureAnalyserAnalyzer* analyzer, QuadratureAnalyserAnalyzerSettings* settings )
 :	AnalyzerResults(),
@@ -66,10 +68,10 @@ void QuadratureAnalyserAnalyzerResults::GenerateBubbleText( U64 frame_index, Cha
 	U64 delta;
 	float dtime, rotation, dutime;
 
-	bzero(tpsUnit,sizeof(tpsUnit));
-	bzero(rpsUnit,sizeof(rpsUnit));
-	bzero(buff,sizeof(buff));
-	bzero(str,sizeof(str));
+	std::fill(std::begin(tpsUnit),std::end(tpsUnit), 0);
+	std::fill(std::begin(rpsUnit),std::end(rpsUnit), 0);
+	std::fill(std::begin(buff),std::end(buff), 0);
+	std::fill(std::begin(str),std::end(str), 0);
 
 	ClearResultStrings();
 

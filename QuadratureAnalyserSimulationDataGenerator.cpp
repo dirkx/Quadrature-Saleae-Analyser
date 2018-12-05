@@ -62,7 +62,7 @@ void QuadratureAnalyserSimulationDataGenerator::Initialize( U32 simulation_sampl
 	}
 
 	mClockGenerator.Init(SCANRATE /* 10 to 5k */, simulation_sample_rate );
-	srand(-time(NULL) ^ getpid());
+	srand(0);
 }
 
 U32 QuadratureAnalyserSimulationDataGenerator::GenerateSimulationData( U64 largest_sample_requested, U32 sample_rate, SimulationChannelDescriptor** simulation_channel )
