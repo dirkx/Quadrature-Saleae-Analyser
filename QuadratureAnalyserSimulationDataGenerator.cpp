@@ -22,6 +22,7 @@
 
 #include <AnalyzerHelpers.h>
 #include <assert.h>
+#include <random>
 
 QuadratureAnalyserSimulationDataGenerator::QuadratureAnalyserSimulationDataGenerator()
 {
@@ -62,7 +63,6 @@ void QuadratureAnalyserSimulationDataGenerator::Initialize( U32 simulation_sampl
 	}
 
 	mClockGenerator.Init(SCANRATE /* 10 to 5k */, simulation_sample_rate );
-	srand(0);
 }
 
 U32 QuadratureAnalyserSimulationDataGenerator::GenerateSimulationData( U64 largest_sample_requested, U32 sample_rate, SimulationChannelDescriptor** simulation_channel )
@@ -84,14 +84,21 @@ U32 QuadratureAnalyserSimulationDataGenerator::GenerateSimulationData( U64 large
 	fprintf(stderr,"Starting at %lld, run till %lld  - %ld ticks from previous run %s left over\n", 
 		at, adjusted_largest_sample_requested, ticks, DIRSTR(dir));
 #endif
-        while( at < adjusted_largest_sample_requested )
-        {
-		if (ticks <= 0) {
-			speed = 5+(rand() % 11);		// 5 .. 15 tocks/second
-			runtime  = 500 + (rand() %  4500); 	// 0.5 to 5 seconds.
-			dir = rand() % 3;			// in random (or non moving) direction.
-			ticks = 2 * speed * runtime  / 1000;
-	// fprintf(stderr,"speed %d, length %d, ticks %d, %s\n", speed, runtime , ticks, DIRSTR(dir));
+	std::random_device random_device;
+	std::mt19937 random_generator(random_device());
+	std::uniform_int_distribution<int> speed_distribution(5,15);
+	std::uniform_int_distribution<int> runtime_distribution(500,5000);
+	std::uniform_int_distribution<int> dir_distribution(0,2);
+
+	while( at < adjusted_largest_sample_requested )
+	{
+		if( ticks <= 0 )
+		{
+			speed = speed_distribution(random_generator);		// 5 .. 15 tocks/second
+			runtime = runtime_distribution(random_generator); 	// 0.5 to 5 seconds.
+			dir = dir_distribution(random_generator);			// in random (or non moving) direction.
+			ticks = 2 * speed * runtime / 1000;
+			// fprintf(stderr,"speed %d, length %d, ticks %d, %s\n", speed, runtime , ticks, DIRSTR(dir));
 		};
 
 		switch(dir) {
