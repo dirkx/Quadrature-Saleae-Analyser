@@ -37,3 +37,30 @@ Version 1.02 / 2011-09-10
 
 $Id: README 1037 2011-09-12 09:49:58Z dirkx $
 
+CMake Support
+-------------
+
+The analyzer can also be built using CMake, version 3.11 or newer required.
+
+Note - the provided CMake scripts will download the Analyzer SDK, manual download is not required.
+
+Windows:
+Note, visual studio 15 = 2017. Visual studio 2015 (14) is also supported.
+```
+mkdir build
+cd build
+cmake -G "Visual Studio 15 Win64" ..
+cmake --build . --config Debug
+```
+
+MacOS & Linux:
+```
+mkdir -p build/debug build/release
+cd build/debug
+cmake -DCMAKE_BUILD_TYPE=Debug ../..
+cmake --build . 
+cd ../..
+cd build/release
+cmake -DCMAKE_BUILD_TYPE=Release ../..
+cmake --build .
+```
